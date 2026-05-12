@@ -1,0 +1,145 @@
+\documentclass[11pt]{article}
+
+% ---------- Packages ----------
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{setspace}
+\usepackage{parskip}
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage[nameinlink,noabbrev]{cleveref}
+\usepackage{hyperref}
+\usepackage{tabularx}
+\usepackage{caption}
+\usepackage{float}
+% ---------- Formatting ----------
+\onehalfspacing
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    citecolor=blue,
+    urlcolor=blue
+}
+
+% ---------- Title Info ----------
+\title{From Prediction to Causality: An Empirical Study of Student Performance Determinants\\[4pt]\large STAT 230A Final Project Proposal}
+\author{Yijiao Zhou\\ \texttt{yijiao\_zhou@berkeley.edu}}
+\date{\today}
+\begin{document}
+\maketitle
+
+\section{Background}
+
+Understanding the factors that influence student performance is crucial for educators, policymakers, and students themselves. While factors such as family background, study habits, and school environment have been known to be associated with academic performance, distinguishing casuality from correlation remains a challenge. 
+
+Also, extra-curricular activity has been widely debated in terms of its impact on academic performance. Some argue that it enhances time management and social skills, while others suggest it may detract from study time. This project will explore the relationship between extra-curricular activities and student exam scores, controlling for various confounding factors.
+
+This project consists of two main components:
+\begin{enumerate}
+    \item \textbf{Prediction (70\%)}: Predict student exam scores based on academic, lifestyle and socioeconomic factors using statistical linear models.
+    \item \textbf{Causality (30\%)}: Investigate the causal relationships between the extra-curricular activities and exam scores using methods such as propensity score matching or instrumental variables.
+\end{enumerate}
+
+\section{Data}
+\subsection{Data Source}
+
+The data comes from Kaggle's \href{https://www.kaggle.com/datasets/grandmaster07/student-exam-performance-dataset-analysis/data}{ ``Student Exam Performance Dataset Analysis''} \cite{kaggle_student_performance}, which contains information on students's academic, lifestyle and socioeconomic factors. 
+
+\subsection{Variables}
+Overall, the dataset includes 6,607 student observations and 20 columns, including 19 predictor variables and 1 response variable ( \texttt{Exam\_Score}). Among all the predictors, we have 6 continuous variables (e.g., \texttt{Hours\_Studied}, \texttt{Sleep\_Hours}) and  13 categorical variables (e.g., \texttt{Gender}, \texttt{School\_Type}). 
+
+
+The brief summary of the variables is given in Tables~\ref{tab:continuous_summary} and~\ref{tab:categorical_summary}. We have 3 categorical variables with missing values: \texttt{Teacher\_Quality}, \texttt{Parental\_Education\_Level} and \texttt{Distance\_from\_Home}, with null rates of 1.2\%, 1.4\% and 1.0\% respectively. The continuous variables have no missing values. And the number of categories for each categorical variable ranges from 2 to 4. If we choose to encode the categorical variables using one-hot encoding, the total number of predictors will not explode severely.
+
+\begin{table}[htbp]
+\centering
+\caption{Summary Statistics for Continuous Variables}
+\label{tab:continuous_summary}
+\begin{tabular}{lrrrrrr}
+\toprule
+Variable & Mean & Std. Dev. & Min & Max & Null Count & Null Rate \\
+\midrule
+Hours\_Studied     & 19.98 & 5.99 & 1.00  & 44.00  & 0 & 0.000 \\
+Attendance         & 79.98 & 11.55 & 60.00 & 100.00 & 0 & 0.000 \\
+Sleep\_Hours       & 7.03  & 1.47 & 4.00  & 10.00  & 0 & 0.000 \\
+Previous\_Scores   & 75.07 & 14.40 & 50.00 & 100.00 & 0 & 0.000 \\
+Tutoring\_Sessions & 1.49  & 1.23 & 0.00  & 8.00   & 0 & 0.000 \\
+Physical\_Activity & 2.97  & 1.03 & 0.00  & 6.00   & 0 & 0.000 \\
+Exam\_Score        & 67.24 & 3.89 & 55.00 & 101.00 & 0 & 0.000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Summary Statistics for Categorical Variables}
+\label{tab:categorical_summary}
+\begin{tabularx}{\textwidth}{l c X l c c}
+\toprule
+Variable & No. of Categories  & Mode & Null Count & Null Rate \\
+\midrule
+Parental\_Involvement      & 3                     & Medium      & 0  & 0.000 \\
+Access\_to\_Resources      & 3                   & Medium      & 0  & 0.000 \\
+Extracurricular\_Activities& 2                            & Yes         & 0  & 0.000 \\
+Motivation\_Level          & 3                    & Medium      & 0  & 0.000 \\
+Internet\_Access           & 2                            & Yes         & 0  & 0.000 \\
+Family\_Income             & 3                   & Low         & 0  & 0.000 \\
+Teacher\_Quality           & 4                    & Medium      & 78 & 0.012 \\
+School\_Type               & 2                      & Public      & 0  & 0.000 \\
+Peer\_Influence            & 3          & Positive    & 0  & 0.000 \\
+Learning\_Disabilities     & 2                             & No          & 0  & 0.000 \\
+Parental\_Education\_Level & 4   & High School & 90 & 0.014 \\
+Distance\_from\_Home       & 4                & Near        & 67 & 0.010 \\
+Gender                     & 2                        & Male        & 0  & 0.000 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Detailed Methods}
+I will describe the specific methods I plan to use for both the prediction and causality components of the project.
+
+\begin{enumerate}
+    \item \textbf{Prediction}
+
+    Our basic model will normal linear model, where the response variable is \texttt{Exam\_Score} and the predictors include all the continuous and categorical variables.
+\begin{equation*}
+y_i = \beta_0 + \sum_{j=1}^{p} \beta_j X_{ij} + \epsilon_i, ~~ \epsilon_i \sim N(0, \sigma^2)
+\end{equation*}
+where $y_i$ is the exam score for student $i$, $X_{ij}$ are the predictor variables, $\beta_j$ are the coefficients to be estimated, and $\epsilon_i$ is normal noise.
+
+    After data preprocessing (e.g., handling missing values, encoding categorical variables), I will fit OLS regression to estimate the coefficients. I will also check the assumptions of the linear model (e.g., normality of residuals, homoscedasticity) and consider transformations or alternative models if necessary. And also, techniques such as $\mathrm{AIC}$, $\mathrm{BIC}$, cross-validation and penalization (LASSO, Ridge and Elastic Net) will be used to select the best subset of predictors. 
+    
+    Finally, I will evaluate the model's performance using metrics such as $R^2$, Mean Absolute Error (MAE) and Root Mean Squared Error (RMSE) on a held-out test set. With the optimal model, I will also interpret the coefficients to understand the impact of each predictor on exam scores.
+    \item \textbf{Causality}
+    
+    Jumping to investigate the causal relationship between extra-curricular activities and exam scores, the main model is as follows:
+\begin{equation*}
+y_i = \alpha_0 + \alpha_1 T_i + \sum_{j=1}^{p} \alpha_j X_{ij} + \eta_i, ~~ \eta_i \sim N(0, \sigma^2)
+\end{equation*}
+where $T_i$ is the treatment variable indicating whether student $i$ participates in extra-curricular activities, and $X_{ij}$ are the confounding variables that may affect both the treatment and the outcome.
+
+Since the raw data is not from a randomized controlled trial, we need to account for potential confounding factors to estimate the causal effect. Currently, I am considering the following steps:
+\begin{itemize}
+    \item \textbf{Propensity Score}: First, I will estimate the propensity score (the probability of participating in extra-curricular activities given the confounders) using logistic regression.
+    
+    \item \textbf{Matching}: I will match treated and control units based on their propensity scores using methods such as nearest neighbor matching or caliper matching.
+    
+    \item \textbf{Balance Check}: After matching, I will check the balance of confounders between the treated and control groups to ensure that the matching process has successfully reduced confounding bias.
+    
+    \item \textbf{Treatment Effect Estimation}: Finally, I will estimate the average treatment effect (ATE) of extra-curricular activities on exam scores by comparing the outcomes between the matched treated and control groups. To get a more robust estimate, I may also consider using regression adjustment or inverse probability weighting in conjunction with matching. Using bootstrapping to obtain confidence intervals for the estimated treatment effect will also be considered.
+    
+
+\end{itemize}
+
+\end{enumerate}
+
+
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}

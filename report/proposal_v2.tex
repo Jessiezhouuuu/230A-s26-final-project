@@ -1,0 +1,192 @@
+\documentclass[11pt]{article}
+
+% ---------- Packages ----------
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{setspace}
+\usepackage{parskip}
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage[nameinlink,noabbrev]{cleveref}
+\usepackage{hyperref}
+\usepackage{tabularx}
+\usepackage{caption}
+\usepackage{float}
+% ---------- Formatting ----------
+\onehalfspacing
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    citecolor=blue,
+    urlcolor=blue
+}
+
+% ---------- Title Info ----------
+\title{Estimating the Causal Effect of Extracurricular Activities on Student Performance\\[4pt]\large STAT 230A Final Project Proposal}
+\author{Yijiao Zhou\\ \texttt{yijiao\_zhou@berkeley.edu}}
+\date{\today}
+\begin{document}
+\maketitle
+
+\section{Background}
+
+Understanding the factors that influence student performance is crucial for educators, policymakers, and students themselves. While factors such as family background, study habits, and school environment have been known to be associated with academic performance, distinguishing casuality from correlation remains a challenge. 
+
+Also, extra-curricular activity has been widely debated in terms of its impact on academic performance. Some argue that it enhances time management and social skills, while others suggest it may detract from study time. This project will explore the relationship between extra-curricular activities and student exam scores, controlling for various confounding factors.
+
+
+The primary goal of this project is to estimate the causal effect of extra-curricular activities on student exam scores, while controlling for other factors that may influence both the likelihood of participating in extra-curricular activities and academic performance.
+
+\section{Data}
+\subsection{Data Source}
+
+The data comes from Kaggle's \href{https://www.kaggle.com/datasets/grandmaster07/student-exam-performance-dataset-analysis/data}{ ``Student Exam Performance Dataset Analysis''} \cite{kaggle_student_performance}, which contains information on students's academic, lifestyle and socioeconomic factors. 
+
+\subsection{Variables}
+Overall, the dataset includes 6,607 student observations and 20 columns, including 19 predictor variables and 1 response variable ( \texttt{Exam\_Score}). Among all the predictors, we have 6 continuous variables (e.g., \texttt{Hours\_Studied}, \texttt{Sleep\_Hours}) and  13 categorical variables (e.g., \texttt{Gender}, \texttt{School\_Type}). 
+
+
+The brief summary of the variables is given in Tables~\ref{tab:continuous_summary} and~\ref{tab:categorical_summary}. We have 3 categorical variables with missing values: \texttt{Teacher\_Quality}, \texttt{Parental\_Education\_Level} and \texttt{Distance\_from\_Home}, with null rates of 1.2\%, 1.4\% and 1.0\% respectively. The continuous variables have no missing values. And the number of categories for each categorical variable ranges from 2 to 4. If we choose to encode the categorical variables using one-hot encoding, the total number of predictors will not explode severely.
+
+\begin{table}[htbp]
+\centering
+\caption{Summary Statistics for Continuous Variables}
+\label{tab:continuous_summary}
+\begin{tabular}{lrrrrrr}
+\toprule
+Variable & Mean & Std. Dev. & Min & Max & Null Count & Null Rate \\
+\midrule
+Hours\_Studied     & 19.98 & 5.99 & 1.00  & 44.00  & 0 & 0.000 \\
+Attendance         & 79.98 & 11.55 & 60.00 & 100.00 & 0 & 0.000 \\
+Sleep\_Hours       & 7.03  & 1.47 & 4.00  & 10.00  & 0 & 0.000 \\
+Previous\_Scores   & 75.07 & 14.40 & 50.00 & 100.00 & 0 & 0.000 \\
+Tutoring\_Sessions & 1.49  & 1.23 & 0.00  & 8.00   & 0 & 0.000 \\
+Physical\_Activity & 2.97  & 1.03 & 0.00  & 6.00   & 0 & 0.000 \\
+Exam\_Score        & 67.24 & 3.89 & 55.00 & 101.00 & 0 & 0.000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Summary Statistics for Categorical Variables}
+\label{tab:categorical_summary}
+\begin{tabularx}{\textwidth}{l c X l c c}
+\toprule
+Variable & No. of Categories  & Mode & Null Count & Null Rate \\
+\midrule
+Parental\_Involvement      & 3                     & Medium      & 0  & 0.000 \\
+Access\_to\_Resources      & 3                   & Medium      & 0  & 0.000 \\
+Extracurricular\_Activities& 2                            & Yes         & 0  & 0.000 \\
+Motivation\_Level          & 3                    & Medium      & 0  & 0.000 \\
+Internet\_Access           & 2                            & Yes         & 0  & 0.000 \\
+Family\_Income             & 3                   & Low         & 0  & 0.000 \\
+Teacher\_Quality           & 4                    & Medium      & 78 & 0.012 \\
+School\_Type               & 2                      & Public      & 0  & 0.000 \\
+Peer\_Influence            & 3          & Positive    & 0  & 0.000 \\
+Learning\_Disabilities     & 2                             & No          & 0  & 0.000 \\
+Parental\_Education\_Level & 4   & High School & 90 & 0.014 \\
+Distance\_from\_Home       & 4                & Near        & 67 & 0.010 \\
+Gender                     & 2                        & Male        & 0  & 0.000 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Detailed Methods}
+
+\subsection{Causal Question}
+
+Let 
+\begin{enumerate}
+    \item $Y_i$: exam score of student $i$;
+    \item $T_i$: indicator of whether student $i$ participates in extra-curricular activities (1 if yes, 0 if no);
+    \item $X_i$: vector of observed covariates for student $i$ (e.g., family income, hours studied, etc.);
+\end{enumerate}
+
+The parameter of interest is the average treatment effect (ATE) of extra-curricular activities on exam scores, defined as:
+\begin{equation*}
+\text{ATE} = \mathbb{E}[Y_i(1) - Y_i(0)]
+\end{equation*}
+where $Y_i(1)$ is the potential outcome (exam score) if student $i$ participates in extra-curricular activities, and $Y_i(0)$ is the potential outcome if student $i$ does not participate in extra-curricular activities.
+
+Since the dataset is observational, we will need to make assumptions to identify the ATE. We will assume unconfoundedness, which states that conditional on the observed covariates $X_i$, the treatment assignment $T_i$ is independent of the potential outcomes:
+\begin{equation*}
+Y_i(1), Y_i(0) \perp T_i \mid X_i
+\end{equation*}
+
+\subsection{Outcome Regression}
+
+The primary estimation method will be outcome regression, where we model the expected exam score as a linear function of the treatment and covariates:
+
+\begin{equation*}
+Y_i  = \alpha_0 + \alpha_1 T_i + X_i^T \alpha + \epsilon_i
+\end{equation*}
+
+Here, $\alpha_1$ represents the estimated average treatment effect of extra-curricular activities on exam scores, controlling for the covariates $X_i$. We will fit this model using ordinary least squares (OLS) regression.
+
+
+\subsection{Treatment Effect Heterogeneity}
+
+To examine whether the effect of extra-curricular activities varies across different subgroups of students, we will also explore treatment effect heterogeneity. This can be done by including interaction terms between the treatment variable and key covariates (e.g., family income, hours studied) in the regression model:
+
+\begin{equation*}
+Y_i = \alpha_0 + \alpha_1 T_i + X_i^T \alpha + (T_i \cdot X_i)^T \gamma + \epsilon_i
+\end{equation*}
+
+
+\subsection{Propensity Score Methods}
+
+In addition to outcome regression, we will also use propensity score methods to estimate the ATE. We will first estimate the propensity score (the probability of participating in extra-curricular activities given the covariates) using logistic regression:
+\begin{equation*}
+e(X_i) = P(T_i = 1 \mid X_i) = \frac{1}{1 + \exp(-X_i^T \beta)}
+\end{equation*}
+
+Then, we will use the inverse probability weights in the regression model to estimate the ATE:
+\begin{equation*}
+    w_i = \begin{cases}
+    \frac{1}{e(X_i)} & \text{if } T_i = 1 \\
+    \frac{1}{1 - e(X_i)} & \text{if } T_i = 0
+    \end{cases}
+\end{equation*}
+
+Then run:
+\begin{equation*}
+Y_i = \alpha_0 + \alpha_1 T_i + X_i^T \alpha + \epsilon_i
+\end{equation*}
+with weights $w_i$ to estimate the ATE.
+
+
+\subsection{Model Diagnostics}
+
+\subsubsection{For Outcome Regression}
+
+\begin{itemize}
+    \item Check for linearity: Plot residuals against fitted values to check for any systematic patterns that may indicate non-linearity.
+    \item Assess homoscedasticity: Use plots of residuals versus fitted values to check for constant variance of residuals across different levels of fitted values. It is important to ensure that the variance of residuals is constant, as heteroscedasticity can lead to inefficient estimates and invalid inference. If heteroscedasticity is detected, we may consider using robust standard errors or transforming the response variable.
+    \item Check for multicollinearity: Calculate variance inflation factors (VIF) for the covariates to check for multicollinearity. In the context of causal inference, multicollinearity can make it difficult to disentangle the effects of individual covariates and may lead to unstable estimates. 
+    \item Infuluential points: Use leverage and Cook's distance to identify influential observations that may disproportionately affect the regression estimates. In causal inference, influential points can bias the estimated treatment effect, so it is important to investigate these observations and consider sensitivity analyses.
+\end{itemize}
+
+\subsubsection{For Propensity Score Methods}
+
+\begin{itemize}
+    \item Assessing overlap: Check the distribution of propensity scores for treated and control groups to ensure sufficient overlap. Lack of overlap can lead to extrapolation and unreliable estimates of the treatment effect.
+    \item Balance diagnostics: After applying propensity score methods (e.g., matching, weighting), check the balance of covariates between treated and control groups using standardized mean differences or other balance metrics. Proper balance is crucial for reducing confounding bias and obtaining valid causal estimates.
+    \item Weight stability: If using inverse probability weighting, check the distribution of weights to identify any extreme weights that may indicate model misspecification or lack of overlap. Extreme weights can lead to unstable estimates and may require trimming or alternative methods.
+
+\end{itemize}
+
+
+
+
+
+
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}
